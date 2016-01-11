@@ -1,17 +1,22 @@
 ---
+- name: check if private key exists on remote server
+  stat: path=/home/{{ install_user }}/.ssh/{{ bitbucket_project }}
+  register: pk
+
 - name: check if key pair has been generated
   local_action: stat path=./files/{{ bitbucket_project }}
-  register: st
+  register: kp
+  when: not pk.stat.exists
 
 - name: Creating ssh key pair
   local_action: command ssh-keygen -t rsa -b 4096 -f ./files/{{ bitbucket_project }} -C "{{ bitbucket_email }}" -N ''
-  when: not st.stat.exists
+  when: not pk.stat.exists and not kp.stat.exists
 
 - name: Add public key to bitbucket deploy-keys
-  local_action: command sh ./roles/bitbucket_cred/files/bitbucket_deploy_key.sh -u={{ bitbucket_user}} -a={{ bitbucket_account }} -p={{ bitbucket_project }} add ./files/{{ bitbucket_project}}.pub
-  when: not st.stat.exists
+  local_action: command sh ./roles/bitbucket_cred/files/bitbucket_deploy_key.sh -u={{ bitbucket_user}} -p={{ bitbucket_password}} -o={{ bitbucket_owner }} -r={{ bitbucket_project }} add ./files/{{ bitbucket_project}}.pub
+  when: not pk.stat.exists and not kp.stat.exists
 
 - name: Add private key to target deploy server
   copy: src=./files/{{ bitbucket_project }} dest=/home/{{ install_user }}/.ssh/
     owner={{ install_user }} group={{ install_group }} mode=0600
-  when: not st.stat.exists
+  when: not pk.stat.exists
