@@ -1,6 +1,6 @@
-===================================
-Bitbucket Credential Ansible Module
-===================================
+=================================
+Bitbucket Credential Ansible Role
+=================================
 
 :ABOUT: Generate ssh key pair, deploy private key on remote server and add public key to bitbucket's deploy-keys
 
@@ -10,7 +10,6 @@ Vars
 ::
 
   {
-    bitbucket_key_name: "<name_for_ssh_key_pair>"
     bitbucket_email: "<mail_for_ssh_key_pair>"
     bitbucket_user: "<user>"
     bitbucket_password: "<password>"
@@ -31,8 +30,8 @@ Process
 Notes:
 ~~~~~~
 
-- It doesn't create a new key-pair if the remote server already has a private key with <bitbucket_key_name>
+- It doesn't create a new key-pair if the remote server already has a private key named <bitbucket_project>
 
-- Create a new key pair if you're deploying on a machine that doesn't have already has the key pair in /path/to/project/files/<bitbucket_key_name>. The key pair is not saved in /path/to/project/roles/bitbucket_cred/files.
+- Create a new key pair if you're deploying on a machine that doesn't have already has the key pair in /path/to/project/files/<bitbucket_project>.
 
 - bitbucket deploy key is named like this: ``BPK:${bitbucket_user}@${bitbucket_project}_${timestamp}``

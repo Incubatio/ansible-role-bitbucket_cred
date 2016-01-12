@@ -8,6 +8,10 @@
   register: kp
   when: not pk.stat.exists
 
+- name: check for bitbucket vars
+  fail: msg="Bailing out. this play requires bitbucket_cred variables"
+  when: not pk.stat.exists and not kp.stat.exists and (bitbucket_owner is undefined or bitbucket_user is undefined or bitbucket_password is undefined or bitbucket_project is undefined)
+
 - name: Creating ssh key pair
   local_action: command ssh-keygen -t rsa -b 4096 -f ./files/{{ bitbucket_project }} -C "{{ bitbucket_email }}" -N ''
   when: not pk.stat.exists and not kp.stat.exists
