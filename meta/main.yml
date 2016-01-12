@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  author: Incubatio
+  description: "generate a rsa key pair, push private key to deploy server, and public key to desired bitbucket's repo deploy-keys"
+  min_ansible_version: 1.9.3
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+    - name: Debian
+      versions:
+        - all
+  categories:
+    - system
+
+dependencies: []
