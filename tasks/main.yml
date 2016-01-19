@@ -3,24 +3,33 @@
   stat: path=/home/{{ install_user }}/.ssh/{{ bitbucket_project }}
   register: pk
 
-- name: check if key pair has been generated
-  local_action: stat path=./files/{{ bitbucket_project }}
-  register: kp
-  when: not pk.stat.exists
+- block:
+  - name: check if key pair has been generated
+    local_action: stat path=./files/{{ bitbucket_project }}
+    register: kp
 
-- name: check for bitbucket vars
-  fail: msg="Bailing out. this play requires bitbucket_cred variables"
-  when: not pk.stat.exists and not kp.stat.exists and (bitbucket_owner is undefined or bitbucket_user is undefined or bitbucket_password is undefined or bitbucket_project is undefined)
+  - block:
+    - name: check for bitbucket vars
+      fail: msg="Bailing out. this play requires bitbucket_cred variables"
+      when: bitbucket_owner is undefined or bitbucket_user is undefined or bitbucket_password is undefined or bitbucket_project is undefined
 
-- name: Creating ssh key pair
-  local_action: command ssh-keygen -t rsa -b 4096 -f ./files/{{ bitbucket_project }} -C "{{ bitbucket_email }}" -N ''
-  when: not pk.stat.exists and not kp.stat.exists
+    - name: Creating ssh key pair
+      local_action: command ssh-keygen -t rsa -b 4096 -f ./files/{{ bitbucket_project }} -C "{{ bitbucket_email }}" -N ''
 
-- name: Add public key to bitbucket deploy-keys
-  local_action: command sh ./roles/bitbucket_cred/files/bitbucket_deploy_key.sh -u={{ bitbucket_user}} -p={{ bitbucket_password}} -o={{ bitbucket_owner }} -r={{ bitbucket_project }} add ./files/{{ bitbucket_project}}.pub
-  when: not pk.stat.exists and not kp.stat.exists
+    - name: Add public key to bitbucket deploy-keys
+      local_action: command sh ./roles/bitbucket_cred/files/bitbucket_deploy_key.sh -u={{ bitbucket_user}} -p={{ bitbucket_password}} -o={{ bitbucket_owner }} -r={{ bitbucket_project }} add ./files/{{ bitbucket_project}}.pub
+      register: bt_res
 
-- name: Add private key to target deploy server
-  copy: src=./files/{{ bitbucket_project }} dest=/home/{{ install_user }}/.ssh/
-    owner={{ install_user }} group={{ install_group }} mode=0600
+    - block:
+      - local_action: shell /bin/rm -f ./files/{{ bitbucket_project }}*
+      - debug: var=bt_res.stdout_lines
+      - fail: msg="Bitbucket failed to add public key, check error detail above"
+      when: not (bt_res.stdout_lines[3] == "HTTP/1.1 200 OK")
+
+    when: not kp.stat.exists
+
+  - name: Add private key to target deploy server
+    copy: src=./files/{{ bitbucket_project }} dest=/home/{{ install_user }}/.ssh/
+      owner={{ install_user }} group={{ install_group }} mode=0600
+
   when: not pk.stat.exists
